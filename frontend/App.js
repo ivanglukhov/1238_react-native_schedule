@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Schedule from './tabs/schedule.js'
+import { MaterialCommunityIcons } from 'react-native-vector-icons';
 
 
 export default function App() {
@@ -11,8 +12,8 @@ export default function App() {
   return (
     <NavigationContainer>
       <Tab.Navigator>
-        <Tab.Screen name="Расписание" component={Schedule}>
-
+        <Tab.Screen name="Расписание" component={Schedule} options={{
+          tabBarIcon: () => (<MaterialCommunityIcons name="notebook-edit" size="40"/>) }}>
         </Tab.Screen>
 
       </Tab.Navigator>

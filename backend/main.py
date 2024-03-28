@@ -1,23 +1,21 @@
 from flask import Flask
 from flask_cors import CORS, cross_origin
 import sqlite3
+from datetime import date, timedelta
 
+def create_week_dict():
+    dw = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"]
+    date_list = []
+    today = date.today()
+    start = today - timedelta(days=today.weekday()+1)
+    for day in range(0,7):
+        next = start + timedelta(days=day)
+        date_list.append([str(next), dw[next.weekday()]])
 
+    return date_list
 
-
-connection = sqlite3.connect("database.db", check_same_thread=False)
+connection = sqlite3.connect("schedule.db", check_same_thread=False)
 cursor = connection.cursor()
-
-'''cursor.execute("DROP TABLE Schedule")'''
-
-cursor.execute('''CREATE TABLE IF NOT EXISTS Schedule (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    day_of_week VARCHAR NOT NULL,
-    start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
-    subject VARCHAR NOT NULL,
-    group_id VARCHAR(3) NOT NULL
-); ''')
 
 time = {
     1: ['8:00','8:40'],
@@ -30,62 +28,37 @@ time = {
 }
 
 
-schedule = [['Русский язык',
-  'Русский язык',
-  'Литература',
-  'Литература',
-  'Литература',
-  'Иностранный язык'],
- ['Иностранный язык',
-  'Иностранный язык',
-  'Математика(Алгебра)',
-  'Математика(Алгебра)',
-  'Математика(Алгебра)',
-  'Математика(Алгебра)',
-  'Физическая культура'],
- ['Математика(Геометрия)',
-  'Математика(Геометрия)',
-  'Математика(Геометрия)',
-  'Математика(Тервер)',
-  'Информатика',
-  'Информатика',
-  'ОБЖ'],
- ['Информатика', 'Информатика', 'Физика', 'Физика', 'Биология', 'Химия'],
- ['История',
-  'История',
-  'Обществознание',
-  'Обществознание',
-  'География',
-  'Физическая культура']]
-
 
 dw = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"]
 
-def writeSchedule():
-    for day in range(len(schedule)):
-        for i in range(len(schedule[day])):
-            d = dw[day]
-            s_t = time[i+1][0]
-            e_t = time[i+1][1]
-            s = schedule[day][i]
-            g_r = '11А'
-            
-            print(f'''INSERT INTO Schedule (day_of_week, start_time, end_time, subject, group_id) 
-            VALUES({d},{s_t},{e_t},{s},{g_r})''')
-            cursor.execute(f'''INSERT INTO Schedule (day_of_week, start_time, end_time, subject, group_id) 
-            VALUES("{d}","{s_t}","{e_t}","{s}","{g_r}")''')
-
-            connection.commit()
-
-writeSchedule()
 
 
-def select_day_schedule(day, group):
+def select_day_schedule(group):
     select = cursor.execute(f'''SELECT * FROM Schedule
-    WHERE day_of_week="{day}" AND group_id ="{group}"''')
+    WHERE group_id ="{group}"''')
     select = cursor.fetchall()
-    print(select)
-    return select
+    week_list = create_week_dict()
+
+    temp_d = {}
+    for i in select:
+        if i[1] not in temp_d:
+            temp_d[i[1]] = []
+        else:
+            temp_d[i[1]].append(i[4])
+    temp_d['Суббота'] = []
+    temp_d['Воскресенье'] = []
+
+    res_d = []
+
+    for i in week_list:
+        r_d = {}
+        r_d['date'] = i[0]
+        r_d['week_day'] = i[1]
+        r_d['lessons'] = temp_d[i[1]]
+        res_d.append(r_d)
+
+
+    return res_d
 
 
 day_query_translate = {
@@ -103,10 +76,11 @@ day_query_translate = {
 app = Flask(__name__)
 cors = CORS(app)
 
-@app.route("/<day_of_week>/<group>")
+@app.route("/<group>")
 @cross_origin()
-def get_day_schedule(day_of_week, group):
-    day = day_query_translate[day_of_week]
-    select=select_day_schedule(day, group)
+def get_day_schedule(group):
+    select=select_day_schedule(group)
     return select
+
+app.run(debug=True)
 
