@@ -34,7 +34,7 @@ dw = ["Понедельник","Вторник","Среда","Четверг","�
 
 
 def select_day_schedule(group):
-    select = cursor.execute(f'''SELECT * FROM Schedule
+    select = cursor.execute(f'''SELECT * FROM schedule
     WHERE group_id ="{group}"''')
     select = cursor.fetchall()
     week_list = create_week_dict()
